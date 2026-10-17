@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "escape-html": "^1.0.3",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "libphonenumber-js": "^1.13.14",
+    "pug": "^3.0.4",
+    "zod": "^4.6.5"
+  }
+}

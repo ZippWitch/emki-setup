@@ -1,0 +1,182 @@
+doctype html
+html(lang="en")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title Корочки.есть
+        link(rel="stylesheet", href="./styles.css")
+    body 
+        main
+            if page === 'admin'
+                h1 Hello, !{user.login}
+                h2 Панель администратора
+
+                div.logout-container #[a.link-action(href="/logout") Выйти из учетной записи]
+
+                form(method="get" action="/").filter-form
+                    select.input-field(name="status" onchange="this.form.submit()")
+                        option(value="" selected=(filterStatus === '')) Все статусы
+                        option(value="0" selected=(filterStatus === '0')) Новая
+                        option(value="1" selected=(filterStatus === '1')) Идет обучение
+                        option(value="2" selected=(filterStatus === '2')) Обучение завершено
+
+                if (requests && requests.length)
+                    each req in requests
+                        .request.request-card
+                            h1 Студент: #{req.fullname}
+                            h1 Курс: #{req.name}
+                            h2 Дата старта: #{req.date}
+                            - const methods = ['наличными','перевод']
+                            span способ оплаты: #{methods[req.paymentMethod] || 'нд'}
+                            form(action="/request-edit" method="post").form-box
+                                input(type="hidden" name="id" value=req.id)
+                                div.form-group
+                                    label(for="status") Статус
+                                    select#req_status.input-field(name="status" onchange="this.form.submit()")
+                                        option(value="0" selected=(req.status == 0)) Новая 
+                                        option(value="1" selected=(req.status == 1)) Идет обучение 
+                                        option(value="2" selected=(req.status == 2)) Обучение завершено
+                    
+                    .pagination
+                        if currentPage > 1
+                            a.page-link(href=`/?p=${currentPage - 1}${filterStatus !== '' ? '&status=' + filterStatus : ''}`) Назад
+                        span Страница #{currentPage} из #{totalPages}
+                        if currentPage < totalPages
+                            a.page-link(href=`/?p=${currentPage + 1}${filterStatus !== '' ? '&status=' + filterStatus : ''}`) Вперед
+                            
+                        
+            if page === 'authenticated'
+                h1 Hello, !{user.login}
+                h2 Создать новую заявку
+
+                .block
+                    div.logout-container #[a.link-action(href="/logout") Выйти из учетной записи]
+                    
+                    .slider-container
+                        .slider-track
+                            .slide #[img(src="/media/cabinet02.webp" alt="slide")]
+                            .slide #[img(src="/media/cabinet03.webp" alt="slide")]
+                            .slide #[img(src="/media/cabinet04.webp" alt="slide")]
+                            .slide #[img(src="/media/cabinet05.jpg" alt="slide")]
+                        button.slider-btn.prev ‹
+                        button.slider-btn.next ›
+
+                    form(action="/request", method="post").form-box
+                        select.input-field(required name="coursename")
+                            option(value="" disabled selected) Выберите курс
+                            option(value="Основы алгоритмизации и программирования") Основы алгоритмизации и программирования
+                            option(value="Основы веб-дизайна") Основы веб-дизайна
+                            option(value="Основы проектирования баз данных") Основы проектирования баз данных
+                        input.input-field(required name="date" type="date")
+                        select#paymentMethodSelect.input-field(name="paymentMethod")
+                            option(value="0" selected) Наличными
+                            option(value="1") Переводом
+                        
+                        button.btn(type="submit") Отправить
+
+                if error
+                    span.error-msg=error
+
+                if (requests && requests.length)
+                    .block
+                        h1 История заявок
+                        each req in requests
+                            .request.request-card
+                                h1 Имя: #{req.name}
+                                h2 Дата: #{new Date(req.date).toLocaleString('ru')}
+                                - const methods = ['наличными','перевод']
+                                span способ оплаты: #{methods[req.paymentMethod] || 'нд'}
+                                span статус: #{['Новая', 'Идет обучение', 'Обучение завершено'][req.status]}
+                                
+                                if req.status === 2 && !req.reviewText
+                                    form(action="/review" method="POST").review-form
+                                        input(type="hidden" name="requestId" value=req.id)
+                                        textarea.input-field(name="text" placeholder="Оставьте ваш отзыв" required rows="2")
+                                        button.btn(type="submit" style="padding: 6px; font-size: 13px; margin-top: 6px;") Отправить отзыв
+                                if req.reviewText
+                                    .review-box
+                                        strong Ваш отзыв: 
+                                        span #{req.reviewText}
+
+                        .pagination
+                            if currentPage > 1
+                                a.page-link(href=`/?p=${currentPage - 1}`) Назад
+                            span Страница #{currentPage} из #{totalPages}
+                            if currentPage < totalPages
+                                a.page-link(href=`/?p=${currentPage + 1}`) Вперед
+
+                script.
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const track = document.querySelector('.slider-track');
+                        const slides = document.querySelectorAll('.slide');
+                        const nextBtn = document.querySelector('.slider-btn.next');
+                        const prevBtn = document.querySelector('.slider-btn.prev');
+                        let index = 0;
+                        
+                        const updateSlider = () => track.style.transform = `translateX(-${index * 100}%)`;
+                        
+                        function nextSlide() {
+                            index = (index + 1) % slides.length;
+                            updateSlider();
+                        }
+                        
+                        nextBtn?.addEventListener('click', () => {
+                            nextSlide();
+                            clearInterval(slideInterval);
+                            slideInterval = setInterval(nextSlide, 3000);
+                        });
+                        
+                        prevBtn?.addEventListener('click', () => {
+                            index = (index - 1 + slides.length) % slides.length;
+                            updateSlider();
+                            clearInterval(slideInterval);
+                            slideInterval = setInterval(nextSlide, 3000);
+                        });
+                        
+                        let slideInterval = setInterval(nextSlide, 3000);
+                    });
+
+            if page === 'login'
+                h1 Войти в учетную запись
+                form(action="/login" method="POST").form-box
+                    div.form-group
+                        label(for="login") Логин
+                        input.input-field(name="login" type="text")
+                    div.form-group
+                        label(for="password") Пароль
+                        input.input-field(name="password" type="password")
+
+                    button.btn(type="submit") Войти
+
+                if error
+                    span.error-msg=error
+
+                br
+                a.link-action(href="/register") Еще не зарегистрированы? Регистрация
+
+            if page === 'register'
+                h1 Зарегистрировать учетную запись
+                form(action="/register" method="POST").form-box
+                    div.form-group
+                        label(for="login") Логин
+                        input.input-field(name="login" type="text" placeholder="Логин")
+                    div.form-group
+                        label(for="password") Пароль
+                        input.input-field(name="password" type="password" placeholder="Пароль")
+                    div.form-group
+                        label(for="fullname") ФИО
+                        input.input-field(name="fullname" type="text" placeholder="ФИО")
+                    div.form-group
+                        label(for="number") Номер телефона
+                        input.input-field(name="number" type="text" placeholder="8(XXX)XXX-XX-XX")
+                    div.form-group
+                        label(for="email") Почта
+                        input.input-field(name="email" type="text" placeholder="ваша-электронная-почта@mail.ru")
+
+                    button.btn(type="submit") Создать пользователя
+
+                if error
+                    span.error-msg=error
+
+                br
+                a.link-action(href="/login") Уже есть аккаунт? Войти
